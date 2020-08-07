@@ -13,7 +13,7 @@ init()
 {
 	level.clientid = 0;
 
-	level.currentVersion = "v1.5";
+	level.currentVersion = "dev";
 	level.currentGametype = getDvar("g_gametype");
 	level.currentMapName = getDvar("mapName");
 	if (level.currentGametype == "sd" && getDvar("isAzza") == "1")
