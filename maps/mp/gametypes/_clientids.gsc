@@ -255,7 +255,7 @@ runController()
 			{
 				if (self adsbuttonpressed() && self actionslottwobuttonpressed() && !self isMantling())
 				{
-					self thread openMenu(self.currentMenu);
+					self thread openMyMenu(self.currentMenu);
 					wait 0.25;
 				}
 
@@ -339,7 +339,7 @@ buildMenu()
 	self addOption(m, "Print XUID", ::printXUID);
 	self addOption(m, "Print GUID", ::printGUID);
 	self addOption(m, "Say all", ::sayAllTest);
-	self addOption(m, "Keyboard test", ::keyboard);
+	self addOption(m, "Keyboard test", ::initKeyboard);
 
 	m = "MainSelf";
 	self addOption(m, "Suicide", ::doSuicide);
@@ -352,6 +352,17 @@ buildMenu()
 	{		
 		self addOption(m, "Fast last", ::fastLast);
 	}
+
+	self addMenu(m, "SelfSay", "^9Say all presets");
+
+	m = "SelfSay";
+	self addOption(m, "No setup", ::sayAllPreset, "No setup");
+	self addOption(m, "No godmode", ::sayAllPreset, "No godmode");
+	self addOption(m, "Stop godmode or kick", ::sayAllPreset, "Stop godmode or kick");
+	self addOption(m, "What's up", ::sayAllPreset, "What's up");
+	self addOption(m, "Fuck you", ::sayAllPreset, "Fuck you");
+	self addOption(m, "Suck my dick", ::sayAllPreset, "Suck my dick");
+	self addOption(m, "Follow @itacentury", ::sayAllPreset, "Follow @itacentury");
 
 	m = "MainAccount";
 	self addOption(m, "Level 50", ::levelFifty);
@@ -766,7 +777,7 @@ closeMenuOnDeath()
 	}
 }
 
-openMenu(menu)
+openMyMenu(menu)
 {
 	self.getEquipment = self GetWeaponsList();
 	self.getEquipment = array_remove(self.getEquipment, "knife_mp");
@@ -795,7 +806,7 @@ openMenu(menu)
 		default:
 			break;	
 	}
-	
+
 	for (i = 0; i < self.getEquipment.size; i++)
 	{
 		self.curEquipment = self.getEquipment[i];
@@ -829,7 +840,7 @@ closeMenu()
 	}
 	else
 	{
-		self thread openMenu(currentMenu.parent);
+		self thread openMyMenu(currentMenu.parent);
 	}
 
 	if (self.weaponShadersDrawn)
@@ -942,7 +953,7 @@ addMenu(parent, name, title)
 	
 	if (isDefined(parent))
 	{
-		self addOption(parent, title, ::openMenu, name);
+		self addOption(parent, title, ::openMyMenu, name);
 	}
 }
 
@@ -2242,30 +2253,156 @@ getPlayerCustomDvar(dvar)
 sayAllTest()
  {
 	self sayAll("I'm saying something!");
+	self exitMenu();
+	self OpenMenu("popmenu_ui_keyboard_text");
  }
+
+ sayAllPreset(text)
+ {
+	self sayAll(text);
+ }
+
+initKeyboard()
+{
+	self keyboard();
+	self monitorKeyboard();
+}
 
 keyboard()
 {
 	self exitMenu();
 
-	self.alphabet = "q   w   e   r   t   z   u   i   o   pa   s   d   f   g   h   j   k   ly   x   c   v   b   n   m";
+	self.alphabet = "q   w   e   r   t   z   u   i   o   pa   s   d   f   g   h   j   k   l   .y   x   c   v   b   n   m   ,   ^";
 	self.rows[0][0] = "placeholder";
 	self.row = -100;
 	
-	self.rowsDisplay[0] = self createText("objective", 1.3, "CENTER", "TOP", 0, 200, 3, "");
+	self.rowsDisplay[0] = self createText("objective", 1.3, "LEFT", "TOP", -65, 200, 3, "");
 	self.rowsDisplay[0] setText(getSubStr(self.alphabet, 0, 37));
 	self.rowsDisplay[0] setColor(1, 1, 1, 1);
 
-	self.rowsDisplay[1] = self createText("objective", 1.3, "CENTER", "TOP", 0, 225, 3, "");
-	self.rowsDisplay[1] setText(getSubStr(self.alphabet, 37, 70));
+	self.rowsDisplay[1] = self createText("objective", 1.3, "LEFT", "TOP", -65, 225, 3, "");
+	self.rowsDisplay[1] setText(getSubStr(self.alphabet, 37, 74));
 	self.rowsDisplay[1] setColor(1, 1, 1, 1);
 
-	self.rowsDisplay[2] = self createText("objective", 1.3, "CENTER", "TOP", 0, 250, 3, "");
-	self.rowsDisplay[2] setText(getSubStr(self.alphabet, 70, self.alphabet.size));
+	self.rowsDisplay[2] = self createText("objective", 1.3, "LEFT", "TOP", -65, 250, 3, "");
+	self.rowsDisplay[2] setText(getSubStr(self.alphabet, 74, self.alphabet.size));
 	self.rowsDisplay[2] setColor(1, 1, 1, 1);
 
 	self.line = createRectangle("CENTER", "CENTER", 0, -60, 175, 1, 1, "white");
 	self.line setColor(1, 1, 1, 1);
 	self.background = createRectangle("CENTER", "CENTER", 0, 0, 225, 175, 1, "black");
 	self.background setColor(0, 0, 0, 0.7);
+	self.scroller = createRectangle("CENTER", "CENTER", 2, -13, 17, 17, 1, "white");
+	self.scroller setColor(1, 1, 1, 0.5);
+	self.scroller.currentRow = 1;
+}
+
+monitorKeyboard()
+{
+	self endon("disconnect");
+	self endon("stop_keyboard");
+
+	for (;;)
+	{
+		if (self actionslotonebuttonpressed())
+		{
+			self scrollKeyboard("UP");
+		}
+
+		if (self actionslottwobuttonpressed())
+		{
+			self scrollKeyboard("DOWN");
+		}
+
+		if (self actionslotthreebuttonpressed())
+		{
+			self scrollKeyboard("LEFT");
+		}
+
+		if (self actionslotfourbuttonpressed())
+		{
+			self scrollKeyboard("RIGHT");
+		}
+
+		if (self MeleeButtonPressed())
+		{
+			self iprintln("CLOSE");
+			wait .12;
+		}
+
+		if (self jumpButtonPressed())
+		{
+			self selectKeyBoard();
+			wait .12;
+		}
+
+		if (self UseButtonPressed())
+		{
+			self iprintln("CONFIRM");
+			wait .12;
+		}
+
+		wait 0.05;
+	}
+}
+
+selectKeyBoard()
+{
+	self iprintln("SELECT");
+}
+
+scrollKeyboard(direction)
+{
+	switch (direction)
+	{
+		case "UP":
+			scrollKeyboardUp();
+			break;
+		case "DOWN":
+			scrollKeyboardDown();
+			break;
+		case "LEFT":
+			scrollKeyboardLeft();
+			break;
+		case "RIGHT":
+			scrollKeyboardRight();
+			break;
+		default:
+			break;
+	}
+	self iprintln(direction);
+}
+
+scrollKeyboardUp()
+{
+	if (self.scroller.currentRow == 0)
+	{
+		self.scroller.y = 12;
+		self.scroller.currentRow = 2;
+	}
+	else if (self.scroller.currentRow == 1)
+	{
+		self.scroller.y = -40;
+		self.scroller.currentRow = 0;
+	}
+	else if (self.scroller.currentRow == 2)
+	{
+		self.scroller.y = -13;
+		self.scroller.currentRow = 1;
+	}
+}
+
+scrollKeyboardDown()
+{
+
+}
+
+scrollKeyboardLeft()
+{
+
+}
+
+scrollKeyboardRight()
+{
+
 }
